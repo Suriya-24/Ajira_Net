@@ -1,0 +1,49 @@
+{
+    public static int index(ArrayList<String> arr,String s)
+    {
+        int j=0;
+       for(String st:arr)
+       {
+           if(st.contains(s))return j;
+           j++;
+       }
+       return -1;
+    }
+    public static ArrayList<ArrayList<String>> distance(String command,ArrayList<ArrayList<String>> arr)
+    {
+        String[] s=command.split(" ");
+        ArrayList<String> arr2=new ArrayList<>(Arrays.asList(s[1]+"->"+s[2]));
+        arr.add(arr2);
+        return arr;
+    }
+    public static void main(String[] args)
+    {
+        Scanner in=new Scanner(System.in);
+        String s="";
+        ArrayList<String>link=new ArrayList<>();
+        ArrayList<ArrayList<String>>node=new ArrayList<>();
+        while(true)
+        {
+            s=in.nextLine();
+            if(s.equals("break"))break;
+            String[] command=s.split(" ");
+            if(command[0].equals("ADD") && command[1].equals("COMPUTER") || command[1].equals("REPEATER"))link.add(command[1]+" "+"5"+" "+command[2]);
+            else
+            {
+                if(command[0].equals("SET_DEVICE_STRENGTH"))
+                {
+                    int index=index(link,command[1]);
+                    String str=link.get(index);
+                    String[] temp=str.split(" ");
+                    String t=temp[0]+" "+command[2]+" "+temp[temp.length-1];
+                    link.set(index,t);
+                }
+                else {
+                    if (command[0].equals("CONNECT")) node = distance(s, node);
+                }
+            }
+        }
+        System.out.println(node);
+        System.out.println(link);
+    }
+}
