@@ -1,49 +1,262 @@
+import java.io.*;
+import java.util.*;
+import java.lang.*;
+class Graph
 {
-    public static int index(ArrayList<String> arr,String s)
+    HashMap<String, ArrayList<String>> graph;
+    int v;
+    Graph(int v)
     {
-        int j=0;
-       for(String st:arr)
-       {
-           if(st.contains(s))return j;
-           j++;
-       }
-       return -1;
+        graph = new HashMap<String, ArrayList<String>>();
+        for(int i = 0 ; i < v; i++)graph.put(HelloWorld.nodes.get(i), new ArrayList<String>());
     }
-    public static ArrayList<ArrayList<String>> distance(String command,ArrayList<ArrayList<String>> arr)
+    void addEdge(String s, String d)
     {
-        String[] s=command.split(" ");
-        ArrayList<String> arr2=new ArrayList<>(Arrays.asList(s[1]+"->"+s[2]));
-        arr.add(arr2);
-        return arr;
+        graph.get(s).add(d);
+        graph.get(d).add(s);
     }
-    public static void main(String[] args)
+    void printGraph()
     {
-        Scanner in=new Scanner(System.in);
-        String s="";
-        ArrayList<String>link=new ArrayList<>();
-        ArrayList<ArrayList<String>>node=new ArrayList<>();
-        while(true)
+        graph.forEach((k, v) -> System.out.println(k + " : " + (v)));
+    }
+    public void printShortestDistance(String s,String dest)
+    {
+        HashMap<String, Integer> dist = new HashMap<String, Integer>();
+        HashMap<String, String> pred = new HashMap<String, String>();
+        if (BFS(s, dest, pred, dist) == false)
         {
-            s=in.nextLine();
-            if(s.equals("break"))break;
-            String[] command=s.split(" ");
-            if(command[0].equals("ADD") && command[1].equals("COMPUTER") || command[1].equals("REPEATER"))link.add(command[1]+" "+"5"+" "+command[2]);
-            else
+            System.out.println("Given source and destination are not connected");
+            return;
+        }
+        ArrayList<String> path = new ArrayList<String>();
+        String crawl = dest;
+        path.add(crawl);
+        while (pred.get(crawl) != "")
+        {
+            path.add(pred.get(crawl));
+            crawl = pred.get(crawl);
+        }
+        for (int i = path.size() - 1; i >= 0; i--)
+        {
+            if(i != 0)System.out.print(path.get(i) + " -> ");
+            else System.out.println(path.get(i));
+        }
+    }
+    public boolean BFS(String src, String dest,  HashMap<String, String> pred, HashMap<String, Integer> dist)
+    {
+        LinkedList<String> queue = new LinkedList<String>();
+        HashMap<String, Boolean> visited = new HashMap<String, Boolean>();
+        graph.forEach((k,s) -> visited.put(k,false));
+        graph.forEach((k,s) -> dist.put(k,-1));
+        graph.forEach((k,s) -> pred.put(k,""));
+        visited.put(src,true);
+        dist.put(src,0);
+        queue.add(src);
+        while (!queue.isEmpty())
+        {
+            String u = queue.remove();
+            for (int i = 0; i < graph.get(u).size(); i++)
             {
-                if(command[0].equals("SET_DEVICE_STRENGTH"))
+                if (visited.get(graph.get(u).get(i)) == false)
                 {
-                    int index=index(link,command[1]);
-                    String str=link.get(index);
-                    String[] temp=str.split(" ");
-                    String t=temp[0]+" "+command[2]+" "+temp[temp.length-1];
-                    link.set(index,t);
-                }
-                else {
-                    if (command[0].equals("CONNECT")) node = distance(s, node);
+                    visited.put(graph.get(u).get(i),true);
+                    dist.put(graph.get(u).get(i), dist.get(u) + 1);
+                    pred.put(graph.get(u).get(i),u);
+                    queue.add(graph.get(u).get(i));
+                    if (graph.get(u).get(i).equals(dest))
+                        return true;
                 }
             }
         }
-        System.out.println(node);
-        System.out.println(link);
+        return false;
     }
 }
+class HelloWorld
+{
+    public static ArrayList<String> nodes = new ArrayList<String>();
+    public static int flag1 = 0;
+    public static void main(String args[])
+    {
+        Scanner sc = new Scanner(System.in);
+        String input;
+        int flag = 0;
+        ArrayList<String> com = new ArrayList<String>();
+        ArrayList<String> devices = new ArrayList<String>();
+        ArrayList<String> repeater = new ArrayList<String>();
+        HashMap<String,Integer> strength = new HashMap<String, Integer>();
+        HashMap<String, ArrayList<String>> connections = new HashMap<String, ArrayList<String>>();
+        devices.add("COMPUTER");
+        devices.add("REPEATER");
+        com.add("ADD");
+        com.add("CONNECT");
+        com.add("INFO_ROUTE");
+        com.add("SET_DEVICE_STRENGTH");
+        Graph g = new Graph(nodes.size());
+        // infinite loop so that when we run it on a terminal we can stop it by command break or BREAK
+        while(true)
+        {
+            input = sc.nextLine();
+            if(input.equals("break") || input.equals("BREAK"))break;
+            String[] word = input.split(" ");
+            try
+            {
+                if(!com.contains(word[0]))
+                {
+                    System.out.println("ERROR: Invalid command syntax.");
+                }
+                else
+                {
+                    for(int i = 0 ; i < 4; i++)
+                    {
+                        if(word[0].equals(com.get(i)))
+                        {
+                            if(i == 0)
+                            {
+                                if(word.length >3)
+                                {
+                                    System.out.println("ERROR:");
+                                }
+                                else if(devices.contains(word[1]))
+                                {
+                                    if(word[1].equals(devices.get(1)))
+                                    {
+                                        repeater.add(word[2]);
+                                    }
+                                    if(word[2].matches("^[a-zA-Z_$][a-zA-Z_$0-9]*$"))
+                                    {
+                                        if(!nodes.contains(word[2]))
+                                        {
+                                            nodes.add(word[2]);
+                                            System.out.println("Successfully added "+word[2]);
+                                            if(!repeater.contains(word[2]))
+                                            {
+                                                strength.put(word[2], null);
+                                            }
+                                            connections.put(word[2], new ArrayList<String>());
+                                        }
+                                        else
+                                        {
+                                            System.out.println("ERROR: That name already exists.");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    System.out.println("ERROR: Invalid command syntax.");
+                                }
+                            }
+                            else if(i == 1)
+                            {
+                                if(nodes.contains(word[1]))
+                                {
+                                    if(word.length <3)
+                                    {
+                                        System.out.println("Error: invalid command syntax");
+                                    }
+                                    else
+                                    {
+                                        for(int k = 2 ; k < word.length ; k++)
+                                        {
+                                            if(nodes.contains(word[k]))
+                                            {
+                                                if(!word[1].equals(word[k]))
+                                                {
+                                                    if(flag == 0)
+                                                    {
+                                                        g = new Graph(nodes.size());
+                                                        flag = 1;
+                                                    }
+                                                    if(!(g.graph.get(word[1]).contains(word[k])))
+                                                    {
+                                                        g.addEdge(word[1],word[k]);
+                                                        //g.printGraph();
+                                                        System.out.println("Successfully connected "+word[1]+" and "+word[k]+".");
+                                                    }
+                                                    else
+                                                    {
+                                                        System.out.println("Connection is already established between "+word[1]+" and "+word[k]+".");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    System.out.println("ERROR: Cannot connect device to itself");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                System.out.println("ERROR: Node not found");
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    System.out.println("Node not present");
+                                }
+                            }
+                            else if(i == 2)
+                            {
+                                if(repeater.contains(word[1]) || repeater.contains(word[2]))
+                                {
+                                    System.out.println("ERROR: Route cannot be calculated with a repeater");
+                                }
+                                else if(!word[1].equals(word[2]) && (nodes.contains(word[1]) && nodes.contains(word[2])))
+                                {
+                                    g.printShortestDistance(word[1], word[2]);
+                                }
+                                else if(word[1].equals(word[2])  && (nodes.contains(word[1]) && nodes.contains(word[2])))
+                                {
+                                    System.out.println(word[1]+" -> "+word[1]);
+                                }
+                                else
+                                {
+                                    System.out.println("ERROR: Node not found");
+                                }
+                            }
+                            else if(i == 3)
+                            {
+                                if(repeater.contains(word[1]))
+                                {
+                                    System.out.println("Cannot contain repeater");
+                                }
+                                else if(word.length <= 3)
+                                {
+                                    if(word.length == 2)
+                                    {
+                                        strength.put(word[1], 5);
+                                        System.out.println("Successfully defined strength");
+                                    }
+                                    else
+                                    {
+                                        try
+                                        {
+                                            int p = Integer.valueOf(word[2]);
+                                            if(nodes.contains(word[1]))
+                                            {
+                                                strength.put(word[1], p);
+                                                System.out.println("Successfully defined strength");
+                                            }
+                                            else
+                                            {
+                                                System.out.println("Node not present");
+                                            }
+                                        }
+                                        catch(Exception e)
+                                        {
+                                            System.out.println("ERROR: invalid command syntax");
+                                        }
+                                    }
+                                }
+                                else System.out.println("ERROR: Invalid command syntax");
+                            }
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                System.out.println("ERROR: invalid command syntax");
+            }
+ }
+}
+}// since its a console application use break or BREAK command to stop the program.
